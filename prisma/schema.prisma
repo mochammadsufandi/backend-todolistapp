@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  name String 
+  email String @unique
+  password String 
+  role String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Todo Todo[]
+}
+
+model Category {
+  id Int @id @default(autoincrement())
+  name String
+  acronym String
+  createdAt DateTime @default(now())
+  updated_at DateTime @updatedAt
+  Todo Todo[]
+}
+
+model Todo {
+  id Int @id @default(autoincrement())
+  name String
+  deadlineDate DateTime?
+  plannedWorkDate DateTime?
+  image String?
+  supportingFile String[]
+  isFinished Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId Int
+  categoryId Int
+  activityCategoryId Int
+  user User @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  activityCategory ActivityCategory @relation(fields: [activityCategoryId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+}
+
+model ActivityCategory {
+  id Int @id @default(autoincrement())
+  name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Todo Todo[]
+}
