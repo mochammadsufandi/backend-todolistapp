@@ -9,10 +9,10 @@ const unlinkAsync = promisify(fs.unlink);
 class TodoService {
 
     static async getAllTodos(params) {
-        const {id} = params;
+        const {userId} = params;
         const user = await prisma.user.findUnique({
             where : {
-                id : +id
+                id : +userId
             }, 
             select : {
                 Todo : true
@@ -27,10 +27,10 @@ class TodoService {
     }
 
     static async getTodoByName(params) {
-        const {id,name} = params;
+        const {userId,name} = params;
         const user = await prisma.user.findUnique({
             where : {
-                id : +id
+                id : +userId
             }
         })
 
@@ -38,7 +38,7 @@ class TodoService {
 
         const todo = await prisma.todo.findMany({
             where : {
-                userId : +id,
+                userId : +userId,
                 name : {
                     contains : name
                 }
@@ -48,6 +48,17 @@ class TodoService {
         return todo;
     }
 
+    static async getTodoById(params) {
+        const {userId, todoId} = params
+        const todo = await prisma.todo.findUnique({
+            where : {
+             userId : +userId,
+             id : +todoId
+            }
+        })
+        return todo
+    }
+    
     static async create(params) {
         const {userId,name,deadlineDate,plannedWorkDate,image,supportingFile,isFinished,categoryId,activityCategoryId} = params;
 
@@ -97,6 +108,7 @@ class TodoService {
         return todo;
     }
 
+
     static async edit(params) {
         const {id}= params;
         const existingTodo = await prisma.todo.findUnique({
@@ -109,8 +121,15 @@ class TodoService {
         const updateFieldTodo = {};
         const keys = Object.keys(existingTodo);
         for(const key of keys) {
-            if(params[key] === undefined || params[key] === null) {
+            if(params[key] === undefined) {
                 updateFieldTodo[key] = existingTodo[key];
+            } else if (key === 'image' && !params[key]) {
+                const image = existingTodo[key].split('/');
+                const imageName = image[image.length - 1].split('.');
+                const imageExt = 'image/' + imageName[imageName.length - 1];
+                updateFieldTodo[key] = {
+                    mimetype : imageExt
+                }
             } else {
                 if(existingTodo[key] !== params[key]) {
                     updateFieldTodo[key] = params[key]
@@ -120,7 +139,7 @@ class TodoService {
             }
         }
 
-        if(existingTodo.userId !== updateFieldTodo.userId) {
+        if(existingTodo.userId !== +updateFieldTodo.userId) {
             throw({name : 'Bad Request'})
         }
         const imagePath = existingTodo.image.split('/');
@@ -135,6 +154,7 @@ class TodoService {
         if(updateFieldTodo.supportingFile.length >= maxNumberFile) {
             throw({name : 'Bad Request'})
         }
+
         const remainNumber = maxNumberFile - existingTodo.supportingFile.length;
         if(updateFieldTodo.supportingFile.length > remainNumber) {
             throw({name : 'Bad Request'})
@@ -146,26 +166,26 @@ class TodoService {
             return value.mimetype === allowedExtFile;
         })
 
-        console.log(updateFieldTodo)
         if(updateFieldTodo.image && !allowedExtImage.includes(updateFieldTodo.image.mimetype)) {
             throw({name : 'Invalid Input Type'});
         }
-        console.log('Masukk')
 
         if(updateFieldTodo.supportingFile.length >= 1 && !checkFileArray) {
             throw({name : 'Invalid Input Type'});
         }
-        const imageLink = existingTodo.image !== 'localhost:3000/api/images/todos/no-image.jpg' && updateFieldTodo.image 
+
+       let imageLink = updateFieldTodo.image && Object.keys(updateFieldTodo.image).length > 1
             ? writeImageTodos(updateFieldTodo.image) 
-            : 'no-image.jpg';
-        console.log(existingTodo)
+            : existingTodo.image;
         const supportFile = writeFileTodos(updateFieldTodo.supportingFile);
         const supportFileArray = supportFile.map((value) => {
             return value = `localhost:3000/api/files/todos/${value}`;
         })
 
         let arrayFileLink = [...existingTodo.supportingFile, ...supportFileArray];
-
+        if(imageLink !== existingTodo.image) {
+            imageLink = `localhost:3000/images/todos/${imageLink}`
+        }
         const todo = await prisma.todo.update({
             where : {
                 id : +id
@@ -174,7 +194,7 @@ class TodoService {
                name : updateFieldTodo.name,
                deadlineDate : updateFieldTodo.deadlineDate,
                plannedWorkDate : updateFieldTodo.plannedWorkDate,
-               image : `localhost:3000/api/images/todos/${imageLink}`,
+               image : imageLink,
                supportingFile : arrayFileLink,
                categoryId : +updateFieldTodo.categoryId,
                activityCategoryId : +updateFieldTodo.activityCategoryId

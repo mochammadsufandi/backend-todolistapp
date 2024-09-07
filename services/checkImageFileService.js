@@ -16,6 +16,7 @@ class CheckImageFileService {
         })
         if(!todo) throw({name : 'Todo Not Found'});
         const arrayFile = todo[file];
+        console.log(todo)
         const maxNumberFile = process.env.MAX_NUMBER_FILE;
 
         if(file === 'supportingFile') {
@@ -62,7 +63,6 @@ class CheckImageFileService {
             arrayFile.push(todo[file]);
         }
 
-        console.log(arrayFile)
         for(const i in arrayFile) {
             if(arrayFile[i] === fileName) {
                 fileChoosenIndex = i;

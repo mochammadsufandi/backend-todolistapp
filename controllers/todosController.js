@@ -32,6 +32,22 @@ class TodosController {
         }
     }
 
+    static async getTodoById(req,res,next) {
+        try {
+            const params = {
+                ...req.params,
+            }
+            const todo = await TodoService.getTodoById(params);
+            res.status(200).json({
+                message : 'Todo is successfully Fetched',
+                data : todo
+            })
+
+        } catch (err) {
+            next(err);
+        }
+    }
+
     static async create(req,res,next) {
             uploadHandlerTodo(req,res, async(err) => {
                 if(err) {

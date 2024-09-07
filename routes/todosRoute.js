@@ -5,8 +5,9 @@ const CheckImageFileController = require('../controllers/checkImageFileControlle
 const router = express.Router();
 
 router.use(authentication);
-router.get('/:id', TodosController.getAllTodos);
-router.get('/name/:id', TodosController.getTodoByName);
+router.get('/:userId', TodosController.getAllTodos);
+router.get('/byId/:userId/:todoId', TodosController.getTodoById);
+router.get('/name/:userId', TodosController.getTodoByName);
 router.post('/create', TodosController.create);
 router.put('/edit/:id', TodosController.edit);
 router.delete('/delete/:id', TodosController.delete);
