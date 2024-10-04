@@ -14,16 +14,26 @@ class TodoService {
             where : {
                 id : +userId
             }, 
-            select : {
-                Todo : true
-            }
         })
         
         if(!user) throw({name : 'User Not Found'});
 
-        const {Todo} = user;
+        const todos = await prisma.todo.findMany({
+            where : {
+                userId : user.id
+            }, 
+            select : {
+                name : true,
+                deadlineDate : true,
+                plannedWorkDate : true,
+                category : true,
+                activityCategory : true,
+                image : true,
+                supportingFile : true
+            }
+        })
 
-        return Todo;
+        return todos;
     }
 
     static async getTodoByName(params) {
@@ -62,7 +72,7 @@ class TodoService {
     static async create(params) {
         const {userId,name,deadlineDate,plannedWorkDate,image,supportingFile,isFinished,categoryId,activityCategoryId} = params;
 
-        if(!userId || !name || !isFinished || !categoryId) throw({name : 'Required Field'});
+        if(!userId || !name || !isFinished || !categoryId || !activityCategoryId) throw({name : 'Required Field'});
 
         const user = await prisma.user.findUnique({
             where : {
